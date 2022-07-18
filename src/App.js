@@ -5,8 +5,9 @@ import { Chart as ChartJS } from "chart.js/auto";
 
 function App() {
   const [baseFeePerGas, setBaseFeePerGas] = useState([]);
+  const [gasPrice, setGasPrice] = useState(0);
   const [oldestBlock, setOldestBlock] = useState(0);
-  
+
   const blockGenerator = () => {
     let blocks = [];
     for (let i = oldestBlock; i <= oldestBlock + 100; i++) {
@@ -14,17 +15,36 @@ function App() {
     }
     return blocks;
   };
-  const state = {
+
+  const weiToGwei = (data) => parseInt(data, 16) / 1000000000;
+  const baseFeeData = {
     labels: blockGenerator(),
     datasets: [
       {
         label: "Base Fee in Gwei",
-        fill: false,
+        fill: true,
         lineTension: 0.5,
         backgroundColor: "rgba(75,192,192,1)",
         borderColor: "rgba(0,0,0,1)",
         borderWidth: 2,
-        data: baseFeePerGas.map((data) => parseInt(data, 16) / 1000000000),
+        data: baseFeePerGas.map((data) => weiToGwei(data)),
+      },
+    ],
+  };
+
+  const minerFeeData = {
+    labels: blockGenerator(),
+    datasets: [
+      {
+        label: "Miner Fee in Gwei",
+        fill: false,
+        lineTension: 0.5,
+        backgroundColor: "rgba(75,85,192,1)",
+        borderColor: "rgba(0,0,0,1)",
+        borderWidth: 2,
+        data: baseFeePerGas.map(
+          (data) => weiToGwei(gasPrice) - weiToGwei(data)
+        ),
       },
     ],
   };
@@ -47,6 +67,23 @@ function App() {
     const oldest = parseInt(response.data.result.oldestBlock, 16);
     setBaseFeePerGas([...baseFee]);
     setOldestBlock(oldest);
+
+    await fetchMinerFee();
+  };
+
+  const fetchMinerFee = async () => {
+    const postData = {
+      jsonrpc: "2.0",
+      method: "eth_gasPrice",
+      params: [],
+      id: 0,
+    };
+    const response = await axios.post(
+      `${alchemy_url}/${alchemy_api_key}`,
+      postData
+    );
+    const gas = response.data.result;
+    setGasPrice(gas);
   };
 
   useEffect(() => {
@@ -56,17 +93,49 @@ function App() {
   return (
     <div className="App">
       <Line
-        data={state}
+        data={baseFeeData}
         options={{
+          responsive: true,
           title: {
             display: true,
-            text: "Average Rainfall per month",
+            text: "Base Fee in all blocks",
             fontSize: 20,
           },
           legend: {
             display: true,
             position: "right",
           },
+        }}
+      />
+      <br />
+      <Line
+        data={minerFeeData}
+        options={{
+          responsive: true,
+          title: {
+            display: true,
+            text: "Miner Fee in all blocks",
+            fontSize: 20,
+          },
+          legend: {
+            display: true,
+            position: "right",
+          },
+        }}
+        annotation={{
+          aannotations: [
+            {
+              type: "line",
+              mode: "vertical",
+              scaleID: "x-axis-0",
+              borderColor: "red",
+              label: {
+                content: "",
+                enabled: true,
+                position: "top",
+              },
+            },
+          ],
         }}
       />
     </div>
