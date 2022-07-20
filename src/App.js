@@ -36,10 +36,10 @@ function App() {
     labels: blockGenerator(),
     datasets: [
       {
-        label: "Miner Fee in Gwei",
-        fill: false,
+        label: "Average Miner Fee in Gwei",
+        fill: true,
         lineTension: 0.5,
-        backgroundColor: "rgba(75,85,192,1)",
+        backgroundColor: "#FFFF00",
         borderColor: "rgba(0,0,0,1)",
         borderWidth: 2,
         data: baseFeePerGas.map(
